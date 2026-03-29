@@ -36,7 +36,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/tracker.db public/history.json
+          git add data/tracker.db data/categories.json public/history.json
           git diff --staged --quiet || git commit -m "chore: daily sitemap sync $(date -u +%Y-%m-%d)"
           git push
 
