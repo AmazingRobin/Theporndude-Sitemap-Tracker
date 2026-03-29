@@ -40,8 +40,8 @@ async function main() {
       return;
     }
 
-    // 6. Diff & store
-    const newUrls = findAndStoreNewUrls(db, entries, today, categoryMap);
+    // 6. Diff & store (now async — fetches metadata for new URLs)
+    const newUrls = await findAndStoreNewUrls(db, entries, today, categoryMap);
 
     // 7. Get total count
     const [{ count }] = db.select({ count: sql<number>`count(*)` }).from(urls).all();

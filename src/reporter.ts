@@ -1,7 +1,15 @@
+export interface UrlInfo {
+  url: string;
+  name: string;
+  description: string;
+  thumbnail: string;
+  category: string | null;
+}
+
 export interface HistoryEntry {
   date: string;
   count: number;
-  urls: { url: string; category: string | null }[];
+  urls: UrlInfo[];
 }
 
 export interface HistoryData {
@@ -12,7 +20,7 @@ export interface HistoryData {
 
 export async function updateHistory(
   historyPath: string,
-  newUrls: { url: string; category: string | null }[],
+  newUrls: UrlInfo[],
   today: string,
 ): Promise<void> {
   let data: HistoryData;
