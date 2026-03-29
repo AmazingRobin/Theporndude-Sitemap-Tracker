@@ -1,18 +1,14 @@
-import { eq } from "drizzle-orm";
 import { urls } from "../db/schema";
 import type { SitemapEntry } from "./parser";
 import type { BunSQLiteDatabase } from "drizzle-orm/bun-sqlite";
+import { getCategoryForUrl } from "./categories";
 
 export function normalizeUrl(raw: string): string {
   try {
     const u = new URL(raw);
-    // Force https
     u.protocol = "https:";
-    // Remove default ports
     if (u.port === "443" || u.port === "80") u.port = "";
-    // Remove fragment
     u.hash = "";
-    // Remove trailing slash (except root)
     let path = u.pathname;
     if (path.length > 1 && path.endsWith("/")) {
       path = path.slice(0, -1);
@@ -30,44 +26,33 @@ function hashUrl(normalized: string): string {
   return hasher.digest("hex");
 }
 
-function extractCategory(normalized: string): string | null {
-  try {
-    const u = new URL(normalized);
-    const segments = u.pathname.split("/").filter(Boolean);
-    // Skip numeric-only segments (like /5759/)
-    const meaningful = segments.find((s) => !/^\d+$/.test(s));
-    return meaningful || null;
-  } catch {
-    return null;
-  }
-}
-
 export function findAndStoreNewUrls(
   db: BunSQLiteDatabase,
   entries: SitemapEntry[],
   today: string,
+  categoryMap: Map<string, string>,
 ): { url: string; category: string | null }[] {
   // 1. Load existing hashes from DB
   const existingRows = db.select({ urlHash: urls.urlHash }).from(urls).all();
   const existingHashes = new Set(existingRows.map((r) => r.urlHash));
 
-  // 2. Build current URL map: hash -> { normalized, category }
+  // 2. Build current URL map
   const currentMap = new Map<string, { url: string; category: string | null }>();
   for (const entry of entries) {
     const normalized = normalizeUrl(entry.loc);
     const hash = hashUrl(normalized);
     if (!currentMap.has(hash)) {
-      currentMap.set(hash, { url: normalized, category: extractCategory(normalized) });
+      const category = getCategoryForUrl(normalized, categoryMap);
+      currentMap.set(hash, { url: normalized, category });
     }
   }
 
-  // 3. Diff using Set.difference()
+  // 3. Diff
   const currentHashes = new Set(currentMap.keys());
   let newHashes: Set<string>;
   if (typeof currentHashes.difference === "function") {
     newHashes = currentHashes.difference(existingHashes);
   } else {
-    // Fallback for older runtimes
     newHashes = new Set([...currentHashes].filter((h) => !existingHashes.has(h)));
   }
 
@@ -88,7 +73,6 @@ export function findAndStoreNewUrls(
     newEntries.push({ url: info.url, category: info.category });
   }
 
-  // Insert in chunks of 500
   const CHUNK = 500;
   for (let i = 0; i < batch.length; i += CHUNK) {
     const chunk = batch.slice(i, i + CHUNK);

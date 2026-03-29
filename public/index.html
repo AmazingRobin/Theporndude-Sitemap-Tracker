@@ -15,7 +15,8 @@
       -webkit-backdrop-filter: blur(20px);
       border: 1px solid rgba(255,255,255,0.12);
     }
-    .url-row:hover { background: rgba(255,255,255,0.05); }
+    .url-row:hover { background: rgba(255,255,255,0.06); }
+    .cat-pill { background: rgba(139,92,246,0.15); color: #c4b5fd; }
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
@@ -23,7 +24,7 @@
 </head>
 <body class="h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 text-white flex flex-col">
 
-  <div class="max-w-5xl w-full mx-auto px-4 pt-6 pb-4 flex flex-col h-screen overflow-hidden">
+  <div class="max-w-6xl w-full mx-auto px-4 pt-5 pb-3 flex flex-col h-screen overflow-hidden">
 
     <!-- 头部 -->
     <header class="text-center mb-4 shrink-0">
@@ -31,42 +32,42 @@
         <i data-lucide="radar" class="w-7 h-7 text-purple-400"></i>
         <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">Sitemap 新增追踪器</h1>
       </div>
-      <p class="text-slate-400 text-xs">每日监控 theporndude.com 新增站点</p>
+      <p class="text-slate-400 text-sm">每日监控 theporndude.com 新增站点</p>
     </header>
 
     <!-- 统计栏 -->
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4 shrink-0">
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3 shrink-0">
       <div class="glass rounded-xl p-3 text-center">
         <i data-lucide="database" class="w-4 h-4 mx-auto mb-1 text-blue-400"></i>
         <div id="stat-total" class="text-xl font-bold">—</div>
-        <div class="text-[10px] text-slate-400">累计追踪</div>
+        <div class="text-xs text-slate-400">累计追踪</div>
       </div>
       <div class="glass rounded-xl p-3 text-center">
         <i data-lucide="sparkles" class="w-4 h-4 mx-auto mb-1 text-green-400"></i>
         <div id="stat-today" class="text-xl font-bold">—</div>
-        <div class="text-[10px] text-slate-400">最近新增</div>
+        <div class="text-xs text-slate-400">最近新增</div>
       </div>
       <div class="glass rounded-xl p-3 text-center">
         <i data-lucide="calendar" class="w-4 h-4 mx-auto mb-1 text-amber-400"></i>
-        <div id="stat-updated" class="text-xl font-bold text-sm leading-8">—</div>
-        <div class="text-[10px] text-slate-400">最后更新</div>
+        <div id="stat-updated" class="text-xl font-bold text-base leading-8">—</div>
+        <div class="text-xs text-slate-400">最后更新</div>
       </div>
       <div class="glass rounded-xl p-3 text-center">
         <i data-lucide="layers" class="w-4 h-4 mx-auto mb-1 text-purple-400"></i>
         <div id="stat-days" class="text-xl font-bold">—</div>
-        <div class="text-[10px] text-slate-400">追踪天数</div>
+        <div class="text-xs text-slate-400">追踪天数</div>
       </div>
     </div>
 
     <!-- 搜索与筛选 -->
-    <div class="glass rounded-xl p-3 mb-4 flex flex-col sm:flex-row gap-2 shrink-0">
+    <div class="glass rounded-xl p-3 mb-3 flex flex-col sm:flex-row gap-2 shrink-0">
       <div class="relative flex-1">
         <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
         <input id="search" type="text" placeholder="搜索 URL..."
           class="w-full bg-white/5 border border-white/10 rounded-lg pl-10 pr-4 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/30 transition">
       </div>
       <select id="category-filter"
-        class="bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:border-purple-500/50 transition appearance-none cursor-pointer">
+        class="bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:border-purple-500/50 transition cursor-pointer min-w-[140px]">
         <option value="">全部分类</option>
       </select>
       <div id="result-count" class="text-xs text-slate-500 self-center px-2 whitespace-nowrap"></div>
@@ -99,7 +100,7 @@
   </div>
 
 <script>
-const ROW_HEIGHT = 36;
+const ROW_HEIGHT = 42;
 const BUFFER = 10;
 let flatRows = [];
 let allData = null;
@@ -149,13 +150,11 @@ function populateCategories(entries) {
   for (const cat of [...cats].sort()) {
     const opt = document.createElement("option");
     opt.value = cat;
-    opt.textContent = cat.replace(/-/g, " ");
+    opt.textContent = cat;
     select.appendChild(opt);
   }
 }
 
-// Flatten entries into a single row array for virtual scroll
-// Each row is either { type: 'header', date, count } or { type: 'url', url, category }
 function buildFlatList(entries, search = "", category = "") {
   const term = search.toLowerCase().trim();
   flatRows = [];
@@ -169,11 +168,11 @@ function buildFlatList(entries, search = "", category = "") {
       flatRows.push({ type: "url", url: u.url, category: u.category });
     }
   }
+  const urlCount = flatRows.filter(r => r.type === "url").length;
   document.getElementById("result-count").textContent =
-    flatRows.length > 0 ? `共 ${flatRows.filter(r => r.type === "url").length} 条` : "无匹配结果";
+    flatRows.length > 0 ? `共 ${urlCount.toLocaleString()} 条` : "无匹配结果";
 }
 
-// Virtual scroll engine
 let viewport, spacer, content;
 let lastStart = -1, lastEnd = -1;
 
@@ -181,15 +180,12 @@ function initVirtualScroll() {
   viewport = document.getElementById("virtual-viewport");
   spacer = document.getElementById("virtual-spacer");
   content = document.getElementById("virtual-content");
-
   spacer.style.height = (flatRows.length * ROW_HEIGHT) + "px";
   viewport.addEventListener("scroll", onScroll, { passive: true });
   renderVisible();
 }
 
-function onScroll() {
-  requestAnimationFrame(renderVisible);
-}
+function onScroll() { requestAnimationFrame(renderVisible); }
 
 function renderVisible() {
   if (!viewport) return;
@@ -213,25 +209,25 @@ function renderVisible() {
 
     if (row.type === "header") {
       el.innerHTML = `
-        <div class="flex items-center justify-between w-full px-4">
+        <div class="flex items-center justify-between w-full px-5">
           <div class="flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-purple-400"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-            <span class="font-semibold text-sm text-white">${row.date}</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-purple-400"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+            <span class="font-semibold text-base text-white">${row.date}</span>
           </div>
-          <span class="bg-purple-500/20 text-purple-300 text-[10px] font-medium px-2 py-0.5 rounded-full">+${row.count} 新增</span>
+          <span class="bg-purple-500/20 text-purple-300 text-xs font-medium px-2.5 py-0.5 rounded-full">+${row.count} 新增</span>
         </div>`;
       el.style.borderBottom = "1px solid rgba(255,255,255,0.08)";
       el.style.background = "rgba(255,255,255,0.03)";
     } else {
       const display = row.url.replace(/^https?:\/\//, "").replace(/\/$/, "");
       const cat = row.category
-        ? `<span class="shrink-0 bg-white/10 text-slate-400 text-[10px] px-1.5 py-0.5 rounded ml-auto">${row.category.replace(/-/g, " ")}</span>`
+        ? `<span class="cat-pill shrink-0 text-xs px-2 py-0.5 rounded-full ml-auto whitespace-nowrap">${row.category}</span>`
         : "";
       el.innerHTML = `
         <a href="${row.url}" target="_blank" rel="noopener"
-           class="url-row flex items-center gap-2 px-4 w-full h-full transition group overflow-hidden">
-          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-500 group-hover:text-purple-400 shrink-0 transition"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="21" y1="14" y2="3"/></svg>
-          <span class="truncate text-xs text-slate-300 group-hover:text-white transition" title="${row.url}">${display}</span>
+           class="url-row flex items-center gap-3 px-5 w-full h-full transition group overflow-hidden">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-500 group-hover:text-purple-400 shrink-0 transition"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="21" y1="14" y2="3"/></svg>
+          <span class="truncate text-sm text-slate-300 group-hover:text-white transition" title="${row.url}">${display}</span>
           ${cat}
         </a>`;
     }
