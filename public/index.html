@@ -1,102 +1,107 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sitemap New Tracker</title>
+  <title>Sitemap 新增追踪器</title>
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-    body { font-family: 'Inter', sans-serif; }
+    body { font-family: 'Inter', sans-serif; margin: 0; overflow: hidden; }
     .glass {
       background: rgba(255,255,255,0.07);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       border: 1px solid rgba(255,255,255,0.12);
     }
-    .glass-hover:hover {
-      background: rgba(255,255,255,0.12);
-      border-color: rgba(255,255,255,0.2);
-    }
     .url-row:hover { background: rgba(255,255,255,0.05); }
-    .fade-in { animation: fadeIn 0.4s ease-out; }
-    @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
   </style>
 </head>
-<body class="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 text-white">
+<body class="h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 text-white flex flex-col">
 
-  <div class="max-w-5xl mx-auto px-4 py-8 sm:py-12">
+  <div class="max-w-5xl w-full mx-auto px-4 pt-6 pb-4 flex flex-col h-screen overflow-hidden">
 
-    <!-- Header -->
-    <header class="text-center mb-10">
-      <div class="inline-flex items-center gap-2 mb-3">
-        <i data-lucide="radar" class="w-8 h-8 text-purple-400"></i>
-        <h1 class="text-3xl sm:text-4xl font-bold tracking-tight">Sitemap New Tracker</h1>
+    <!-- 头部 -->
+    <header class="text-center mb-4 shrink-0">
+      <div class="inline-flex items-center gap-2 mb-1">
+        <i data-lucide="radar" class="w-7 h-7 text-purple-400"></i>
+        <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">Sitemap 新增追踪器</h1>
       </div>
-      <p class="text-slate-400 text-sm">Daily monitoring of new sites added to theporndude.com</p>
+      <p class="text-slate-400 text-xs">每日监控 theporndude.com 新增站点</p>
     </header>
 
-    <!-- Stats Bar -->
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
-      <div class="glass rounded-xl p-4 text-center">
-        <i data-lucide="database" class="w-5 h-5 mx-auto mb-1 text-blue-400"></i>
-        <div id="stat-total" class="text-2xl font-bold">—</div>
-        <div class="text-xs text-slate-400">Total Tracked</div>
+    <!-- 统计栏 -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4 shrink-0">
+      <div class="glass rounded-xl p-3 text-center">
+        <i data-lucide="database" class="w-4 h-4 mx-auto mb-1 text-blue-400"></i>
+        <div id="stat-total" class="text-xl font-bold">—</div>
+        <div class="text-[10px] text-slate-400">累计追踪</div>
       </div>
-      <div class="glass rounded-xl p-4 text-center">
-        <i data-lucide="sparkles" class="w-5 h-5 mx-auto mb-1 text-green-400"></i>
-        <div id="stat-today" class="text-2xl font-bold">—</div>
-        <div class="text-xs text-slate-400">Latest New</div>
+      <div class="glass rounded-xl p-3 text-center">
+        <i data-lucide="sparkles" class="w-4 h-4 mx-auto mb-1 text-green-400"></i>
+        <div id="stat-today" class="text-xl font-bold">—</div>
+        <div class="text-[10px] text-slate-400">最近新增</div>
       </div>
-      <div class="glass rounded-xl p-4 text-center">
-        <i data-lucide="calendar" class="w-5 h-5 mx-auto mb-1 text-amber-400"></i>
-        <div id="stat-updated" class="text-2xl font-bold text-base">—</div>
-        <div class="text-xs text-slate-400">Last Updated</div>
+      <div class="glass rounded-xl p-3 text-center">
+        <i data-lucide="calendar" class="w-4 h-4 mx-auto mb-1 text-amber-400"></i>
+        <div id="stat-updated" class="text-xl font-bold text-sm leading-8">—</div>
+        <div class="text-[10px] text-slate-400">最后更新</div>
       </div>
-      <div class="glass rounded-xl p-4 text-center">
-        <i data-lucide="layers" class="w-5 h-5 mx-auto mb-1 text-purple-400"></i>
-        <div id="stat-days" class="text-2xl font-bold">—</div>
-        <div class="text-xs text-slate-400">Days Tracked</div>
+      <div class="glass rounded-xl p-3 text-center">
+        <i data-lucide="layers" class="w-4 h-4 mx-auto mb-1 text-purple-400"></i>
+        <div id="stat-days" class="text-xl font-bold">—</div>
+        <div class="text-[10px] text-slate-400">追踪天数</div>
       </div>
     </div>
 
-    <!-- Search & Filter -->
-    <div class="glass rounded-xl p-4 mb-8 flex flex-col sm:flex-row gap-3">
+    <!-- 搜索与筛选 -->
+    <div class="glass rounded-xl p-3 mb-4 flex flex-col sm:flex-row gap-2 shrink-0">
       <div class="relative flex-1">
         <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
-        <input id="search" type="text" placeholder="Search URLs..."
-          class="w-full bg-white/5 border border-white/10 rounded-lg pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/30 transition">
+        <input id="search" type="text" placeholder="搜索 URL..."
+          class="w-full bg-white/5 border border-white/10 rounded-lg pl-10 pr-4 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/30 transition">
       </div>
       <select id="category-filter"
-        class="bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500/50 transition appearance-none cursor-pointer">
-        <option value="">All Categories</option>
+        class="bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:border-purple-500/50 transition appearance-none cursor-pointer">
+        <option value="">全部分类</option>
       </select>
+      <div id="result-count" class="text-xs text-slate-500 self-center px-2 whitespace-nowrap"></div>
     </div>
 
-    <!-- Entries Container -->
-    <div id="entries"></div>
-
-    <!-- Empty State -->
-    <div id="empty" class="hidden text-center py-20">
-      <i data-lucide="inbox" class="w-16 h-16 mx-auto mb-4 text-slate-600"></i>
-      <p class="text-slate-500 text-lg">No data yet</p>
-      <p class="text-slate-600 text-sm mt-1">Run the tracker to start monitoring</p>
+    <!-- 虚拟滚动容器 -->
+    <div id="virtual-viewport" class="flex-1 min-h-0 overflow-y-auto rounded-xl glass">
+      <div id="virtual-spacer" style="position:relative;">
+        <div id="virtual-content" style="position:absolute;left:0;right:0;"></div>
+      </div>
     </div>
 
-    <!-- Loading State -->
-    <div id="loading" class="text-center py-20">
-      <i data-lucide="loader-2" class="w-8 h-8 mx-auto mb-3 text-purple-400 animate-spin"></i>
-      <p class="text-slate-400">Loading data...</p>
+    <!-- 空状态 -->
+    <div id="empty" class="hidden flex-1 flex items-center justify-center">
+      <div class="text-center">
+        <i data-lucide="inbox" class="w-16 h-16 mx-auto mb-4 text-slate-600"></i>
+        <p class="text-slate-500 text-lg">暂无数据</p>
+        <p class="text-slate-600 text-sm mt-1">运行追踪器开始监控</p>
+      </div>
+    </div>
+
+    <!-- 加载状态 -->
+    <div id="loading" class="flex-1 flex items-center justify-center">
+      <div class="text-center">
+        <i data-lucide="loader-2" class="w-8 h-8 mx-auto mb-3 text-purple-400 animate-spin"></i>
+        <p class="text-slate-400">加载中...</p>
+      </div>
     </div>
 
   </div>
 
 <script>
-const COLLAPSE_THRESHOLD = 50;
+const ROW_HEIGHT = 36;
+const BUFFER = 10;
+let flatRows = [];
 let allData = null;
 
 async function init() {
@@ -112,9 +117,11 @@ async function init() {
       return;
     }
 
+    document.getElementById("virtual-viewport").classList.remove("hidden");
     renderStats(allData);
     populateCategories(allData.entries);
-    renderEntries(allData.entries);
+    buildFlatList(allData.entries);
+    initVirtualScroll();
     setupSearch();
     lucide.createIcons();
   } catch (e) {
@@ -139,8 +146,7 @@ function populateCategories(entries) {
     }
   }
   const select = document.getElementById("category-filter");
-  const sorted = [...cats].sort();
-  for (const cat of sorted) {
+  for (const cat of [...cats].sort()) {
     const opt = document.createElement("option");
     opt.value = cat;
     opt.textContent = cat.replace(/-/g, " ");
@@ -148,89 +154,99 @@ function populateCategories(entries) {
   }
 }
 
-function renderEntries(entries, searchTerm = "", category = "") {
-  const container = document.getElementById("entries");
-  container.innerHTML = "";
-
-  const filtered = filterEntries(entries, searchTerm, category);
-
-  if (filtered.length === 0) {
-    container.innerHTML = `
-      <div class="text-center py-12">
-        <p class="text-slate-500">No matching results</p>
-      </div>`;
-    return;
-  }
-
-  for (const entry of filtered) {
-    const card = document.createElement("div");
-    card.className = "glass rounded-2xl p-5 mb-4 fade-in";
-
-    const collapsed = entry.urls.length > COLLAPSE_THRESHOLD;
-    const displayUrls = collapsed ? entry.urls.slice(0, COLLAPSE_THRESHOLD) : entry.urls;
-    const id = "card-" + entry.date;
-
-    card.innerHTML = `
-      <div class="flex items-center justify-between mb-4">
-        <div class="flex items-center gap-2">
-          <i data-lucide="calendar-days" class="w-4 h-4 text-purple-400"></i>
-          <span class="font-semibold">${entry.date}</span>
-        </div>
-        <span class="bg-purple-500/20 text-purple-300 text-xs font-medium px-2.5 py-1 rounded-full">
-          +${entry.count} new
-        </span>
-      </div>
-      <div id="${id}" class="space-y-1">
-        ${displayUrls.map(u => urlRow(u)).join("")}
-      </div>
-      ${collapsed ? `
-        <button onclick="expandCard('${id}', this, ${JSON.stringify(entry.urls.slice(COLLAPSE_THRESHOLD)).replace(/"/g, '&quot;')})"
-          class="mt-3 text-sm text-purple-400 hover:text-purple-300 transition flex items-center gap-1">
-          <i data-lucide="chevron-down" class="w-4 h-4"></i>
-          Show ${entry.urls.length - COLLAPSE_THRESHOLD} more
-        </button>
-      ` : ""}
-    `;
-    container.appendChild(card);
-  }
-  lucide.createIcons();
-}
-
-function urlRow(u) {
-  const display = u.url.replace(/^https?:\/\//, "").replace(/\/$/, "");
-  const cat = u.category
-    ? `<span class="shrink-0 bg-white/10 text-slate-300 text-[10px] px-1.5 py-0.5 rounded">${u.category.replace(/-/g, " ")}</span>`
-    : "";
-  return `
-    <a href="${u.url}" target="_blank" rel="noopener"
-       class="url-row flex items-center gap-2 px-3 py-2 rounded-lg transition group">
-      <i data-lucide="external-link" class="w-3.5 h-3.5 text-slate-500 group-hover:text-purple-400 shrink-0 transition"></i>
-      <span class="truncate text-sm text-slate-300 group-hover:text-white transition" title="${u.url}">${display}</span>
-      ${cat}
-    </a>`;
-}
-
-window.expandCard = function(id, btn, remaining) {
-  const container = document.getElementById(id);
-  for (const u of remaining) {
-    container.insertAdjacentHTML("beforeend", urlRow(u));
-  }
-  btn.remove();
-  lucide.createIcons();
-};
-
-function filterEntries(entries, search, category) {
+// Flatten entries into a single row array for virtual scroll
+// Each row is either { type: 'header', date, count } or { type: 'url', url, category }
+function buildFlatList(entries, search = "", category = "") {
   const term = search.toLowerCase().trim();
-  const result = [];
+  flatRows = [];
   for (const entry of entries) {
-    let filtered = entry.urls;
-    if (category) filtered = filtered.filter(u => u.category === category);
-    if (term) filtered = filtered.filter(u => u.url.toLowerCase().includes(term));
-    if (filtered.length > 0) {
-      result.push({ ...entry, urls: filtered, count: filtered.length });
+    let urls = entry.urls;
+    if (category) urls = urls.filter(u => u.category === category);
+    if (term) urls = urls.filter(u => u.url.toLowerCase().includes(term));
+    if (urls.length === 0) continue;
+    flatRows.push({ type: "header", date: entry.date, count: urls.length });
+    for (const u of urls) {
+      flatRows.push({ type: "url", url: u.url, category: u.category });
     }
   }
-  return result;
+  document.getElementById("result-count").textContent =
+    flatRows.length > 0 ? `共 ${flatRows.filter(r => r.type === "url").length} 条` : "无匹配结果";
+}
+
+// Virtual scroll engine
+let viewport, spacer, content;
+let lastStart = -1, lastEnd = -1;
+
+function initVirtualScroll() {
+  viewport = document.getElementById("virtual-viewport");
+  spacer = document.getElementById("virtual-spacer");
+  content = document.getElementById("virtual-content");
+
+  spacer.style.height = (flatRows.length * ROW_HEIGHT) + "px";
+  viewport.addEventListener("scroll", onScroll, { passive: true });
+  renderVisible();
+}
+
+function onScroll() {
+  requestAnimationFrame(renderVisible);
+}
+
+function renderVisible() {
+  if (!viewport) return;
+  const scrollTop = viewport.scrollTop;
+  const viewH = viewport.clientHeight;
+
+  let start = Math.floor(scrollTop / ROW_HEIGHT) - BUFFER;
+  let end = Math.ceil((scrollTop + viewH) / ROW_HEIGHT) + BUFFER;
+  start = Math.max(0, start);
+  end = Math.min(flatRows.length, end);
+
+  if (start === lastStart && end === lastEnd) return;
+  lastStart = start;
+  lastEnd = end;
+
+  const frag = document.createDocumentFragment();
+  for (let i = start; i < end; i++) {
+    const row = flatRows[i];
+    const el = document.createElement("div");
+    el.style.cssText = `position:absolute;top:${i * ROW_HEIGHT}px;left:0;right:0;height:${ROW_HEIGHT}px;display:flex;align-items:center;`;
+
+    if (row.type === "header") {
+      el.innerHTML = `
+        <div class="flex items-center justify-between w-full px-4">
+          <div class="flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-purple-400"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+            <span class="font-semibold text-sm text-white">${row.date}</span>
+          </div>
+          <span class="bg-purple-500/20 text-purple-300 text-[10px] font-medium px-2 py-0.5 rounded-full">+${row.count} 新增</span>
+        </div>`;
+      el.style.borderBottom = "1px solid rgba(255,255,255,0.08)";
+      el.style.background = "rgba(255,255,255,0.03)";
+    } else {
+      const display = row.url.replace(/^https?:\/\//, "").replace(/\/$/, "");
+      const cat = row.category
+        ? `<span class="shrink-0 bg-white/10 text-slate-400 text-[10px] px-1.5 py-0.5 rounded ml-auto">${row.category.replace(/-/g, " ")}</span>`
+        : "";
+      el.innerHTML = `
+        <a href="${row.url}" target="_blank" rel="noopener"
+           class="url-row flex items-center gap-2 px-4 w-full h-full transition group overflow-hidden">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-500 group-hover:text-purple-400 shrink-0 transition"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="21" y1="14" y2="3"/></svg>
+          <span class="truncate text-xs text-slate-300 group-hover:text-white transition" title="${row.url}">${display}</span>
+          ${cat}
+        </a>`;
+    }
+    frag.appendChild(el);
+  }
+  content.innerHTML = "";
+  content.appendChild(frag);
+}
+
+function rebuildVirtualScroll() {
+  spacer.style.height = (flatRows.length * ROW_HEIGHT) + "px";
+  viewport.scrollTop = 0;
+  lastStart = -1;
+  lastEnd = -1;
+  renderVisible();
 }
 
 function setupSearch() {
@@ -239,12 +255,13 @@ function setupSearch() {
   let debounce;
 
   function doFilter() {
-    renderEntries(allData.entries, searchInput.value, catSelect.value);
+    buildFlatList(allData.entries, searchInput.value, catSelect.value);
+    rebuildVirtualScroll();
   }
 
   searchInput.addEventListener("input", () => {
     clearTimeout(debounce);
-    debounce = setTimeout(doFilter, 200);
+    debounce = setTimeout(doFilter, 150);
   });
   catSelect.addEventListener("change", doFilter);
 }
