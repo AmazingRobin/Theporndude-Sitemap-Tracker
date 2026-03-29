@@ -1,0 +1,19 @@
+{
+  "name": "theporndude-sitemap-tracker",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "bun run src/index.ts",
+    "generate": "drizzle-kit generate",
+    "migrate": "drizzle-kit migrate"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.44.0",
+    "fast-xml-parser": "^5.2.0"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.2.0",
+    "better-sqlite3": "^12.8.0",
+    "drizzle-kit": "^0.31.0"
+  }
+}
