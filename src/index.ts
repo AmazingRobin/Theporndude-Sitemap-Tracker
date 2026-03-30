@@ -7,46 +7,45 @@ import { parseSitemap } from "./parser";
 import { findAndStoreNewUrls } from "./differ";
 import { updateHistory } from "./reporter";
 import { buildCategoryMap } from "./categories";
+import { buildSiteCatalog } from "./catalog";
 import { urls } from "../db/schema";
 
 const DB_PATH = "data/tracker.db";
 const HISTORY_PATH = "public/history.json";
 const CATEGORY_CACHE_PATH = "data/categories.json";
+const CATALOG_PATH = "public/sites.json";
 
 async function main() {
   const today = new Date().toISOString().split("T")[0];
   console.log(`\n=== Sitemap-New-Tracker [${today}] ===\n`);
 
-  // 1. Init DB
   const sqlite = new Database(DB_PATH, { create: true });
   sqlite.run("PRAGMA journal_mode = WAL;");
   const db = drizzle(sqlite);
 
-  // 2. Run migrations
   migrate(db, { migrationsFolder: "./drizzle" });
 
   try {
-    // 3. Build category map (cached per day)
+    // Build category map
     const categoryMap = await buildCategoryMap(CATEGORY_CACHE_PATH);
 
-    // 4. Fetch sitemap
+    // Build site catalog (cached per day)
+    await buildSiteCatalog(CATALOG_PATH);
+
+    // Fetch sitemap
     const sitemapUrl = await fetchSitemapUrl();
     const xml = await fetchSitemapXml(sitemapUrl);
 
-    // 5. Parse
     const entries = parseSitemap(xml);
     if (entries.length === 0) {
       console.log("[main] No entries parsed, exiting.");
       return;
     }
 
-    // 6. Diff & store (now async — fetches metadata for new URLs)
     const newUrls = await findAndStoreNewUrls(db, entries, today, categoryMap);
 
-    // 7. Get total count
     const [{ count }] = db.select({ count: sql<number>`count(*)` }).from(urls).all();
 
-    // 8. Update history
     await updateHistory(HISTORY_PATH, newUrls, today);
 
     console.log(`\n[main] Done — ${newUrls.length} new, ${count} total in DB\n`);
