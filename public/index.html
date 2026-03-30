@@ -9,7 +9,6 @@
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
     body { font-family: 'Inter', sans-serif; margin: 0; overflow: hidden; font-size: 14px; }
-    * { min-font-size: 12px; }
     .glass {
       background: rgba(255,255,255,0.07);
       backdrop-filter: blur(20px);
@@ -19,6 +18,9 @@
     .trow:hover { background: rgba(255,255,255,0.05); }
     .cat-pill { background: rgba(139,92,246,0.18); color: #c4b5fd; }
     .thumb-img { width: 40px; height: 40px; object-fit: cover; border-radius: 6px; background: rgba(255,255,255,0.05); }
+    .toggle-btn { transition: all 0.2s; }
+    .toggle-btn.active { background: rgba(139,92,246,0.3); color: #e9d5ff; border-color: rgba(139,92,246,0.5); }
+    .toggle-btn:not(.active) { background: rgba(255,255,255,0.04); color: #94a3b8; border-color: rgba(255,255,255,0.1); }
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
@@ -61,8 +63,13 @@
       </div>
     </div>
 
-    <!-- 搜索与筛选 -->
+    <!-- 搜索、筛选、切换 -->
     <div class="glass rounded-xl p-2.5 mb-3 flex flex-col sm:flex-row gap-2 shrink-0">
+      <!-- 今日/全部 切换 -->
+      <div class="flex rounded-lg overflow-hidden border border-white/10 shrink-0">
+        <button id="btn-today" class="toggle-btn active px-3 py-2 text-[13px] font-medium border-r border-white/10 cursor-pointer">今日新增</button>
+        <button id="btn-all" class="toggle-btn px-3 py-2 text-[13px] font-medium cursor-pointer">全部数据</button>
+      </div>
       <div class="relative flex-1">
         <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
         <input id="search" type="text" placeholder="搜索站点名称或 URL..."
@@ -117,6 +124,7 @@ const ROW_HEIGHT = 56;
 const BUFFER = 8;
 let flatRows = [];
 let allData = null;
+let viewMode = "today"; // "today" or "all"
 
 async function init() {
   try {
@@ -133,9 +141,10 @@ async function init() {
 
     renderStats(allData);
     populateCategories(allData.entries);
-    buildFlatList(allData.entries);
+    buildFlatList();
     initVirtualScroll();
     setupSearch();
+    setupToggle();
     lucide.createIcons();
   } catch (e) {
     document.getElementById("loading").classList.add("hidden");
@@ -167,8 +176,18 @@ function populateCategories(entries) {
   }
 }
 
-function buildFlatList(entries, search = "", category = "") {
+function getVisibleEntries() {
+  if (viewMode === "today" && allData.entries.length > 0) {
+    return [allData.entries[0]];
+  }
+  return allData.entries;
+}
+
+function buildFlatList() {
+  const search = document.getElementById("search")?.value || "";
+  const category = document.getElementById("category-filter")?.value || "";
   const term = search.toLowerCase().trim();
+  const entries = getVisibleEntries();
   flatRows = [];
   let idx = 0;
   for (const entry of entries) {
@@ -192,20 +211,17 @@ function buildFlatList(entries, search = "", category = "") {
       });
     }
   }
-  const count = flatRows.length;
   document.getElementById("result-count").textContent =
-    count > 0 ? `共 ${count.toLocaleString()} 条` : "无匹配结果";
+    flatRows.length > 0 ? `共 ${flatRows.length.toLocaleString()} 条` : "无匹配结果";
 }
 
 function extractName(url) {
   try {
     const segs = new URL(url).pathname.split("/").filter(Boolean);
-    if (segs.length >= 2 && /^\d+$/.test(segs[0])) {
+    if (segs.length >= 2 && /^\d+$/.test(segs[0]))
       return segs[1].replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
-    }
-    if (segs.length >= 3 && segs[0].length === 2 && /^\d+$/.test(segs[1])) {
+    if (segs.length >= 3 && segs[0].length === 2 && /^\d+$/.test(segs[1]))
       return segs[2].replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
-    }
     const last = segs[segs.length - 1] || url;
     return last.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
   } catch { return url; }
@@ -288,13 +304,36 @@ function rebuildVirtualScroll() {
   renderVisible();
 }
 
+function setupToggle() {
+  const btnToday = document.getElementById("btn-today");
+  const btnAll = document.getElementById("btn-all");
+
+  btnToday.addEventListener("click", () => {
+    if (viewMode === "today") return;
+    viewMode = "today";
+    btnToday.classList.add("active");
+    btnAll.classList.remove("active");
+    buildFlatList();
+    rebuildVirtualScroll();
+  });
+
+  btnAll.addEventListener("click", () => {
+    if (viewMode === "all") return;
+    viewMode = "all";
+    btnAll.classList.add("active");
+    btnToday.classList.remove("active");
+    buildFlatList();
+    rebuildVirtualScroll();
+  });
+}
+
 function setupSearch() {
   const searchInput = document.getElementById("search");
   const catSelect = document.getElementById("category-filter");
   let debounce;
 
   function doFilter() {
-    buildFlatList(allData.entries, searchInput.value, catSelect.value);
+    buildFlatList();
     rebuildVirtualScroll();
   }
 
