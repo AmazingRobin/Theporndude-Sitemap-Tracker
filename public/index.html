@@ -16,10 +16,9 @@
     .tab-btn { transition: all 0.2s; cursor: pointer; }
     .tab-btn.active { background: rgba(139,92,246,0.3); color: #e9d5ff; border-color: rgba(139,92,246,0.5); }
     .tab-btn:not(.active) { background: rgba(255,255,255,0.04); color: #94a3b8; border-color: rgba(255,255,255,0.1); }
-    .action-btn { transition: all 0.15s; }
-    .action-btn:hover { background: rgba(139,92,246,0.25); }
-    .action-btn.done { background: rgba(34,197,94,0.2); color: #86efac; border-color: rgba(34,197,94,0.28); }
-    .jump-btn.done { background: rgba(59,130,246,0.2); color: #93c5fd; border-color: rgba(59,130,246,0.28); }
+    .act-btn { transition: all 0.15s; display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; text-decoration: none; }
+    .act-btn:hover { background: rgba(139,92,246,0.25); }
+    .act-btn.done { background: rgba(34,197,94,0.15); color: #86efac; border-color: rgba(34,197,94,0.3); }
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
@@ -130,7 +129,7 @@
         <div class="w-[180px] shrink-0">中文名</div>
         <div class="w-[140px] shrink-0 text-center">分类</div>
         <div class="flex-1 min-w-0">网站地址</div>
-        <div class="w-[150px] shrink-0 text-center">操作</div>
+        <div class="w-[120px] shrink-0 text-center">操作</div>
       </div>
       <div id="catalog-viewport" class="flex-1 min-h-0 overflow-y-auto">
         <div id="catalog-spacer" style="position:relative;">
@@ -298,13 +297,15 @@ function buildCatalogRows() {
   catalogRows = [];
   let idx = 0;
   const groups = catSlug ? catalogData.filter(g => g.slug === catSlug) : catalogData;
+  const allSites = [];
   for (const g of groups) {
     for (const s of g.sites) {
       if (search && !s.enName.toLowerCase().includes(search) && !s.zhName.toLowerCase().includes(search)) continue;
-      idx++;
-      catalogRows.push({ idx, ...s, catLabel: g.zhLabel });
+      allSites.push({ ...s, catLabel: g.zhLabel });
     }
   }
+  allSites.reverse();
+  for (const s of allSites) { idx++; catalogRows.push({ idx, ...s }); }
   document.getElementById("cat-count").textContent = catalogRows.length > 0 ? `共 ${catalogRows.length.toLocaleString()} 个站点` : "无匹配";
 }
 
@@ -321,10 +322,11 @@ function renderCatalog() {
     el.className = "trow flex items-center px-4";
     el.style.cssText = `position:absolute;top:${i*ROW_H}px;left:0;right:0;height:${ROW_H}px;border-bottom:1px solid rgba(255,255,255,0.04);`;
     const siteUrl = r.siteUrl ? `<a href="${r.siteUrl}" target="_blank" rel="noopener" class="text-[12px] text-blue-400 hover:text-blue-300 truncate block transition">${r.siteUrl.replace(/^https?:\/\//,"").slice(0,40)}</a>` : `<span class="text-[12px] text-slate-600">—</span>`;
-    const keyword = escJs(r.enName);
-    const copied = isActionDone("copy", r.enName) ? " done" : "";
-    const jumped = isActionDone("jump", r.enName) ? " done" : "";
-    el.innerHTML = `<div class="w-[44px] shrink-0 text-center text-[12px] text-slate-600">${r.idx}</div><div class="w-[180px] shrink-0 px-2 min-w-0"><span class="text-[13px] text-slate-200 font-medium truncate block">${esc(r.enName)}</span></div><div class="w-[180px] shrink-0 px-2 min-w-0"><span class="text-[13px] text-slate-300 truncate block">${esc(r.zhName)}</span></div><div class="w-[140px] shrink-0 text-center"><span class="cat-pill text-[12px] px-2 py-0.5 rounded-full truncate inline-block max-w-full">${r.catLabel}</span></div><div class="flex-1 min-w-0 px-2">${siteUrl}</div><div class="w-[150px] shrink-0"><div class="flex items-center justify-center gap-2"><button onclick="copyName('${keyword}', this)" class="action-btn copy-btn px-2 py-1 rounded text-[12px] text-slate-400 border border-white/10 cursor-pointer${copied}">复制</button><button onclick="jumpKeyword('${keyword}', this)" class="action-btn jump-btn px-2 py-1 rounded text-[12px] text-slate-400 border border-white/10 cursor-pointer${jumped}">跳转</button></div></div>`;
+    const nameKey = r.enName;
+    const copied = copiedSet.has(nameKey);
+    const visited = visitedSet.has(nameKey);
+    const semUrl = buildSemUrl(nameKey);
+    el.innerHTML = `<div class="w-[44px] shrink-0 text-center text-[12px] text-slate-600">${r.idx}</div><div class="w-[180px] shrink-0 px-2 min-w-0"><span class="text-[13px] text-slate-200 font-medium truncate block">${esc(r.enName)}</span></div><div class="w-[180px] shrink-0 px-2 min-w-0"><span class="text-[13px] text-slate-300 truncate block">${esc(r.zhName)}</span></div><div class="w-[140px] shrink-0 text-center"><span class="cat-pill text-[12px] px-2 py-0.5 rounded-full truncate inline-block max-w-full">${r.catLabel}</span></div><div class="flex-1 min-w-0 px-2">${siteUrl}</div><div class="w-[120px] shrink-0 flex items-center justify-center gap-1"><button onclick="doCopy('${esc(nameKey.replace(/'/g,"\\'"))}', this)" class="act-btn ${copied?'done':''} ${copied?'text-green-400':'text-slate-400'}">${copied?'✓ 已复制':'复制'}</button><a href="${semUrl}" target="_blank" rel="noopener" onclick="doVisit('${esc(nameKey.replace(/'/g,"\\'"))}', this)" class="act-btn ${visited?'done':''} ${visited?'text-green-400':'text-slate-400'}">查询</a></div>`;
     f.appendChild(el);
   }
   cCt.innerHTML = ""; cCt.appendChild(f);
@@ -344,28 +346,29 @@ function setupCatalogControls() {
 
 // ===== Utils =====
 function esc(s) { return s ? s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;") : ""; }
-function escJs(s) { return (s || "").replace(/\\/g, "\\\\").replace(/'/g, "\\'"); }
 function extractName(url) { try { const s = new URL(url).pathname.split("/").filter(Boolean); if (s.length>=2&&/^\d+$/.test(s[0])) return s[1].replace(/-/g," ").replace(/\b\w/g,c=>c.toUpperCase()); return s[s.length-1]||url; } catch { return url; } }
-function actionKey(action, name) { return `tpd:${action}:${(name || "").toLowerCase()}`; }
-function isActionDone(action, name) { try { return localStorage.getItem(actionKey(action, name)) === "1"; } catch { return false; } }
-function markActionDone(action, name) { try { localStorage.setItem(actionKey(action, name), "1"); } catch {} }
-function buildKeywordMagicUrl(name) {
-  const url = new URL("https://sem.3ue.co/analytics/keywordmagic/?q=XNXX&db=us&fid=11223979&filter=H4sIAAAAAAAAA4WOywoCMQxF%2FyXrLkbQzfzKMJTSphrINKUvkcF%2Ft2PFlWBXNyHnnu5gZYtYqJAEzdiQYV5WBTbaERx5T7ZyefR5BwoNU0EHszecUYFETOagYT4raIYr9jQ9OxpvyWQcNSNrCparQ81ypS6YFCTMvTyPq4wpao%2Bm1L7%2B7fsYlvUwNOG64d%2BPXb7YaervIO%2BSXNZWaijvshc6EhmkCQEAAA%3D%3D&__gmitm=ayWzA3*l4EVcTpZei43sW*qRvljSdU");
-  url.searchParams.set("q", name || "");
-  return url.toString();
+
+const SEM_BASE = "https://sem.3ue.co/analytics/keywordmagic/?db=us&fid=11223979&filter=H4sIAAAAAAAAA4WOywoCMQxF%2FyXrLkbQzfzKMJTSphrINKUvkcF%2Ft2PFlWBXNyHnnu5gZYtYqJAEzdiQYV5WBTbaERx5T7ZyefR5BwoNU0EHszecUYFETOagYT4raIYr9jQ9OxpvyWQcNSNrCparQ81ypS6YFCTMvTyPq4wpao%2Bm1L7%2B7fsYlvUwNOG64d%2BPXb7YaervIO%2BSXNZWaijvshc6EhmkCQEAAA%3D%3D&__gmitm=ayWzA3*l4EVcTpZei43sW*qRvljSdU&q=";
+function buildSemUrl(name) { return SEM_BASE + encodeURIComponent(name); }
+
+// Persist copied/visited state in localStorage
+const copiedSet = new Set(JSON.parse(localStorage.getItem("cat_copied") || "[]"));
+const visitedSet = new Set(JSON.parse(localStorage.getItem("cat_visited") || "[]"));
+function saveSets() {
+  localStorage.setItem("cat_copied", JSON.stringify([...copiedSet]));
+  localStorage.setItem("cat_visited", JSON.stringify([...visitedSet]));
 }
 
-window.copyName = function(name, btn) {
+window.doCopy = function(name, btn) {
   navigator.clipboard.writeText(name).then(() => {
-    markActionDone("copy", name);
-    btn.classList.add("done");
+    copiedSet.add(name); saveSets();
+    btn.textContent = "✓ 已复制"; btn.classList.add("done"); btn.classList.remove("text-slate-400"); btn.classList.add("text-green-400");
   });
 };
 
-window.jumpKeyword = function(name, btn) {
-  markActionDone("jump", name);
-  btn.classList.add("done");
-  window.open(buildKeywordMagicUrl(name), "_blank", "noopener");
+window.doVisit = function(name, el) {
+  visitedSet.add(name); saveSets();
+  el.classList.add("done"); el.classList.remove("text-slate-400"); el.classList.add("text-green-400");
 };
 
 init();
