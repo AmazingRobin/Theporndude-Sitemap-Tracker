@@ -44,6 +44,9 @@
     <button id="page-catalog" class="tab-btn px-4 py-2 text-[13px] font-medium rounded-lg border border-white/10">
       <span class="inline-flex items-center gap-1.5"><i data-lucide="layout-grid" class="w-4 h-4"></i>站点目录</span>
     </button>
+    <button id="page-scraper" class="tab-btn px-4 py-2 text-[13px] font-medium rounded-lg border border-white/10">
+      <span class="inline-flex items-center gap-1.5"><i data-lucide="bot" class="w-4 h-4"></i>数据抓取</span>
+    </button>
   </div>
 
   <!-- ========== 追踪页面 ========== -->
@@ -139,6 +142,34 @@
     </div>
   </div>
 
+  <!-- ========== 数据抓取页面 ========== -->
+  <div id="view-scraper" class="flex-1 min-h-0 flex flex-col overflow-hidden hidden">
+    <div class="glass rounded-xl p-4 mb-3 shrink-0 flex flex-col gap-3">
+      <div>
+        <label class="block text-sm text-slate-300 mb-1">Cookie (含 GMITM_token 等):</label>
+        <textarea id="scraper-cookie" rows="3" class="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-[13px] text-white focus:outline-none focus:border-purple-500/50" placeholder="通常浏览器存在安全限制，如报错建议搭配 CORS Unblock 及 Header Editor 插件使用..."></textarea>
+      </div>
+      <div class="flex flex-col sm:flex-row items-end gap-3">
+        <div class="flex-1 w-full">
+          <label class="block text-sm text-slate-300 mb-1">请求间隔 (毫秒):</label>
+          <input id="scraper-delay" type="number" value="3000" class="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-[13px] text-white">
+        </div>
+        <div class="flex-1 w-full">
+          <label class="block text-sm text-slate-300 mb-1">跳过前N条:</label>
+          <input id="scraper-skip" type="number" value="1000" class="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-[13px] text-white">
+        </div>
+        <button id="btn-start-scraper" class="w-full sm:w-auto px-6 py-2 bg-purple-600 hover:bg-purple-500 text-white font-medium rounded-lg transition" onclick="toggleScraper()">开始抓取</button>
+      </div>
+    </div>
+    <div class="flex-1 min-h-0 glass rounded-xl flex flex-col overflow-hidden">
+      <div class="shrink-0 px-4 py-2 text-[12px] font-medium text-slate-400 border-b border-white/8 bg-white/3 flex justify-between items-center">
+        <span>抓取日志 (进度: <span id="scrape-progress">0/0</span>)</span>
+        <button id="btn-export-log" class="text-blue-400 hover:text-blue-300 hidden px-2 py-1 bg-blue-400/10 rounded border border-blue-400/20" onclick="exportScrapeData()">导出JSON结果</button>
+      </div>
+      <div id="scrape-log" class="flex-1 p-4 overflow-y-auto text-[12px] font-mono whitespace-pre-wrap text-slate-300"></div>
+    </div>
+  </div>
+
   <!-- 加载 -->
   <div id="loading" class="flex-1 flex items-center justify-center">
     <div class="text-center">
@@ -205,17 +236,24 @@ async function init() {
 function setupPageTabs() {
   const btnT = document.getElementById("page-tracker");
   const btnC = document.getElementById("page-catalog");
+  const btnS = document.getElementById("page-scraper");
   const viewT = document.getElementById("view-tracker");
   const viewC = document.getElementById("view-catalog");
-  btnT.addEventListener("click", () => {
-    btnT.classList.add("active"); btnC.classList.remove("active");
-    viewT.classList.remove("hidden"); viewC.classList.add("hidden");
-  });
+  const viewS = document.getElementById("view-scraper");
+
+  function switchTab(btn, view) {
+    [btnT, btnC, btnS].forEach(b => b.classList.remove("active"));
+    [viewT, viewC, viewS].forEach(v => v.classList.add("hidden"));
+    btn.classList.add("active");
+    view.classList.remove("hidden");
+  }
+
+  btnT.addEventListener("click", () => switchTab(btnT, viewT));
   btnC.addEventListener("click", () => {
-    btnC.classList.add("active"); btnT.classList.remove("active");
-    viewC.classList.remove("hidden"); viewT.classList.add("hidden");
+    switchTab(btnC, viewC);
     if (cVp) { cS = -1; cE = -1; renderCatalog(); }
   });
+  btnS.addEventListener("click", () => switchTab(btnS, viewS));
 }
 
 // ===== Tracker Logic =====
@@ -370,6 +408,133 @@ window.doVisit = function(name, el) {
   visitedSet.add(name); saveSets();
   el.classList.add("done"); el.classList.remove("text-slate-400"); el.classList.add("text-green-400");
 };
+
+// ===== Scraper Logic =====
+let isScraping = false;
+let scrapeInterrupt = false;
+let scrapedResults = [];
+
+async function toggleScraper() {
+  const btn = document.getElementById("btn-start-scraper");
+  if (isScraping) {
+    scrapeInterrupt = true;
+    btn.textContent = "正在停止...";
+    btn.className = "w-full sm:w-auto px-6 py-2 bg-amber-600 text-white font-medium rounded-lg transition";
+    return;
+  }
+  
+  isScraping = true;
+  scrapeInterrupt = false;
+  btn.textContent = "暂停抓取";
+  btn.className = "w-full sm:w-auto px-6 py-2 bg-red-600 hover:bg-red-500 text-white font-medium rounded-lg transition";
+  document.getElementById("btn-export-log").classList.remove("hidden");
+  
+  const skipCount = parseInt(document.getElementById("scraper-skip").value) || 0;
+  const delayMs = parseInt(document.getElementById("scraper-delay").value) || 3000;
+  const cookieStr = document.getElementById("scraper-cookie").value.trim();
+  
+  let allSitesForScrape = [];
+  if (catalogData) {
+    for (const g of catalogData) {
+      for (const s of g.sites) {
+        if (s.enName) allSitesForScrape.push(s.enName);
+      }
+    }
+  }
+  
+  const targets = allSitesForScrape.reverse().slice(skipCount);
+  const total = targets.length;
+  let done = 0;
+  const logDiv = document.getElementById("scrape-log");
+  
+  const appendLog = (msg) => {
+    logDiv.innerHTML += msg + "\n";
+    // Auto scroll to bottom
+    setTimeout(() => { logDiv.scrollTop = logDiv.scrollHeight; }, 10);
+  };
+  
+  appendLog(`[INFO] 开始抓取，读取到 ${allSitesForScrape.length} 个总词汇`);
+  appendLog(`[INFO] 跳过前 ${skipCount} 个，本次处理 ${total} 个词汇...`);
+  
+  for (let i = 0; i < total; i++) {
+    if (scrapeInterrupt) {
+      appendLog("\n[WARN] 已被用户手动停止");
+      break;
+    }
+    
+    document.getElementById("scrape-progress").textContent = `${done+1} / ${total}`;
+    const keyword = targets[i];
+    appendLog(`\n[FETCH] (${done+1}/${total}) 正在请求 -> ${keyword}`);
+    
+    try {
+      const res = await fetch("https://sem.3ue.co/kmtgw/v2/webapi?__gmitm=ayWzA3*l4EVcTpZei43sW*qRvljSdU", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+          // Note: Most modern browsers block setting "Cookie" in headers.
+          "Cookie": cookieStr || ""
+        },
+        body: JSON.stringify({
+          "id": 337,
+          "jsonrpc": "2.0",
+          "method": "ideas.GetKeywords",
+          "params": {
+            "mode": 0, "currency": "USD", "database": "us",
+            "filter": { "phrase": [], "competition_level": [], "cpc": [], "difficulty": [], "results": [], "serp_features": [{"inverted": false, "value": []}], "volume": [{"inverted": false, "operation": 5, "value": 8000}], "words_count": [], "phrase_include_logic": 0 },
+            "groups": [],
+            "order": { "direction": 1, "field": "volume" },
+            "groups_order": { "direction": 1, "field": "count" },
+            "phrase": keyword,
+            "questions_only": false,
+            "page": { "number": 1, "size": 100 }
+          }
+        })
+      });
+      
+      const text = await res.text();
+      let jsonObj = null;
+      try { jsonObj = JSON.parse(text); } catch(e){}
+      
+      scrapedResults.push({ keyword, raw: jsonObj || text });
+      let outputStr = jsonObj ? JSON.stringify(jsonObj).slice(0, 300) + (JSON.stringify(jsonObj).length > 300 ? '...' : '') : text.slice(0,300);
+      appendLog(`[OK] HTTP ${res.status} 返回: ${outputStr}`);
+    } catch (err) {
+      appendLog(`[ERROR] 请求失败: ${err.message} \n(注意: 前端跨域发此类请求通常被拦截。如果抓取失败且提示 Failed to fetch，你需要安装扩展例如 'Allow CORS: Access-Control-Allow-Origin' 并开启它)`);
+    }
+    
+    done++;
+    if (i < total - 1 && !scrapeInterrupt) {
+      await new Promise(r => setTimeout(r, delayMs));
+    }
+  }
+  
+  isScraping = false;
+  btn.textContent = "开始抓取";
+  btn.className = "w-full sm:w-auto px-6 py-2 bg-purple-600 hover:bg-purple-500 text-white font-medium rounded-lg transition";
+  appendLog(`\n[INFO] 任务结束！共计完成 ${done} 个词汇的尝试！`);
+}
+
+function exportScrapeData() {
+  if (!scrapedResults.length) {
+    alert("暂无抓取数据可导出");
+    return;
+  }
+  const blob = new Blob([JSON.stringify(scrapedResults, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `scrape_results_${Date.now()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// 初始化时自动填入刚刚的 Cookie
+setTimeout(() => {
+  const c = document.getElementById("scraper-cookie");
+  if(c && !c.value) {
+    c.value = "GMITM_lang=zh-Hans; GMITM_config={\"semrush\":{\"node\":\"2\",\"lang\":\"zh\"}}; GMITM_token=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJ1bmFtZSI6ImFtYXppbmdyb2JpbiIsInBlcm1pc3Npb25zIjpbInNlbXJ1c2guZ3VydSIsInVzZXIiXSwiaWF0IjoxNzc2MjcwMTUzLCJleHAiOjE3NzY1MjkzNTN9.Wdvaq2gEK7Nuk64y2D4YSY27ow09HG2u_SfV-XIucsuxYHDcAj9u4LH3sC-FMkop4Q5yLWAU66XHKQHeMlSGC1xHmRxSLd7YSi6SzfmGbQpKKOdxyR49AeSG53w7YVtd1zBg6srbZBe_cDg15GZKEtsKgJlDNPisflv1WEHPiBFRtvSnYdptquegopkhuN_84AmowciDZ_pk0HO_EzzoWJUG5aeDIgoUQIIQxj809Y-QWb9zMN8m-LV2zuciUd3S7NoKPdJ9qUdUe_o4-1F2hXNezo4B4g4LU5jq-mGTpQ-ni4RBQiDzjRAMesuUqDfFLj3ZcJt7HpPqpV7iQSTy-w|MTI4; GMITM_uname=amazingrobin; GMITM_ec=MhTTPV1tBLnlB82zK!jso!bt*O~wWA1oj9G1sOdbw1he2h6DiYKx31tdek08q0V3pf6hu6~ItZrBJaeoAmKeDXxC6ZnKKnjqQ55j8!zAGUoTS5xJ*!Q1BqSqSFGqbs~awmau8X*";
+  }
+}, 500);
 
 init();
 </script>
